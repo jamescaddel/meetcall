@@ -95,6 +95,22 @@ export default function RootLayout({
               }
               
               // Document-level native event listeners to bypass React hydration blocks
+              document.addEventListener("submit", function(event) {
+                var target = event.target;
+                if (target && target.tagName === "FORM") {
+                  var nameInput = document.getElementById("name-input");
+                  if (nameInput) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    var finalName = nameInput.value.trim() || "Guest_" + Math.floor(1000 + Math.random() * 9000);
+                    try {
+                      localStorage.setItem("nexin_meet_username", finalName);
+                    } catch(e) {}
+                    window.location.reload();
+                  }
+                }
+              }, true);
+
               document.addEventListener("click", function(event) {
                 var target = event.target;
                 while (target && target !== document.body) {
