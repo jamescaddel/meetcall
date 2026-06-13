@@ -172,8 +172,21 @@ export function useWebRTC(roomId: string, userName: string) {
     const customServerUrl = process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL;
     const serverUrl = customServerUrl || window.location.origin;
     
+    console.log(`[Socket] Connecting to server URL: ${serverUrl}`);
     const socket = io(serverUrl);
     socketRef.current = socket;
+
+    socket.on("connect", () => {
+      console.log(`[Socket] Connected successfully with ID: ${socket.id}`);
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("[Socket] Connection error:", err.message || err);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.warn(`[Socket] Disconnected: ${reason}`);
+    });
 
     // Generate unique local user ID
     const myUserId = `usr_${Math.random().toString(36).substring(2, 9)}`;
@@ -202,18 +215,19 @@ export function useWebRTC(roomId: string, userName: string) {
       peerOptions.secure = protocol === "https:";
     }
 
+    console.log(`[PeerJS] Initializing Peer with options:`, peerOptions);
     // Setup local PeerJS instance
     const peer = new Peer(myUserId, peerOptions);
     peerRef.current = peer;
 
     peer.on("open", (id) => {
-      console.log(`[PeerJS] Opened with ID: ${id}`);
+      console.log(`[PeerJS] Connected to signaling server with ID: ${id}`);
       setLocalUserId(id);
       socket.emit("join-room", { roomId, userId: id, userName });
     });
 
     peer.on("error", (err) => {
-      console.error("[PeerJS] Error:", err);
+      console.error("[PeerJS] Error:", err.message || err.type || err);
       showToast(`Peer connection error: ${err.type}`);
     });
 
