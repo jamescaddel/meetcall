@@ -166,10 +166,11 @@ export function useWebRTC(roomId: string, userName: string) {
     }
 
     const host = window.location.hostname;
+    const protocol = window.location.protocol;
     
     // Support custom signaling URL via environment variable for production deployment
     const customServerUrl = process.env.NEXT_PUBLIC_SIGNALING_SERVER_URL;
-    const serverUrl = customServerUrl || `http://${host}:3001`;
+    const serverUrl = customServerUrl || window.location.origin;
     
     const socket = io(serverUrl);
     socketRef.current = socket;
@@ -192,11 +193,13 @@ export function useWebRTC(roomId: string, userName: string) {
       } catch (e) {
         console.error("[WebRTC] Invalid custom signaling server URL:", e);
         peerOptions.host = host;
-        peerOptions.port = 3001;
+        peerOptions.port = window.location.port ? parseInt(window.location.port) : (protocol === "https:" ? 443 : 80);
+        peerOptions.secure = protocol === "https:";
       }
     } else {
       peerOptions.host = host;
-      peerOptions.port = 3001;
+      peerOptions.port = window.location.port ? parseInt(window.location.port) : (protocol === "https:" ? 443 : 80);
+      peerOptions.secure = protocol === "https:";
     }
 
     // Setup local PeerJS instance
