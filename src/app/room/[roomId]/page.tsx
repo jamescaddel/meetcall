@@ -27,6 +27,7 @@ export default function RoomPage({
   const { roomId } = use(params);
   
   const [userName, setUserName] = useState<string | null>(null);
+  console.log(`[Lobby] Rendering RoomPage, roomId: ${roomId}, userName state: "${userName}"`);
   const [tempName, setTempName] = useState("");
   const [nameError, setNameError] = useState("");
   const [showChat, setShowChat] = useState(false);
@@ -38,6 +39,7 @@ export default function RoomPage({
   useEffect(() => {
     try {
       const saved = localStorage.getItem("nexin_meet_username");
+      console.log(`[Lobby] Checking localStorage on mount, found: "${saved}"`);
       if (saved) {
         setTimeout(() => {
           setUserName(saved);
@@ -58,14 +60,17 @@ export default function RoomPage({
   // Submit name prompt if name is not set
   const handleNameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(`[Lobby] handleNameSubmit triggered, tempName: "${tempName}"`);
     const finalName = tempName.trim() || `Guest_${Math.floor(1000 + Math.random() * 9000)}`;
     try {
       if (typeof window !== "undefined") {
         localStorage.setItem("nexin_meet_username", finalName);
+        console.log(`[Lobby] Saved username to localStorage: "${finalName}"`);
       }
     } catch (e) {
       console.warn("LocalStorage write blocked:", e);
     }
+    console.log(`[Lobby] Setting userName state to: "${finalName}"`);
     setUserName(finalName);
   };
 
