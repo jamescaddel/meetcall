@@ -154,6 +154,17 @@ export function useWebRTC(roomId: string, userName: string) {
   useEffect(() => {
     if (!localStream) return;
 
+    // Check if WebRTC is supported (blocked on insecure HTTP origins)
+    const isWebRTCSupported = typeof window !== "undefined" && 
+      ((window as any).RTCPeerConnection || 
+       (window as any).mozRTCPeerConnection || 
+       (window as any).webkitRTCPeerConnection);
+
+    if (!isWebRTCSupported) {
+      showToast("WebRTC blocked/unsupported. You must use HTTPS or localhost to connect.");
+      return;
+    }
+
     const host = window.location.hostname;
     // Connect to backend server running on port 3001
     const serverUrl = `http://${host}:3001`;

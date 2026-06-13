@@ -69,8 +69,8 @@ export default function RoomPage({
     setUserName(finalName);
   };
 
-  // If name is not set yet, show name prompt
-  if (userName === null) {
+  // If name is not set yet (null or empty), show name prompt
+  if (userName === null || userName === "") {
     return (
       <div className="lobby-wrapper">
         <div className="bg-glow-1"></div>
