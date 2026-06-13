@@ -21,74 +21,90 @@ export default function RootLayout({
               var originalError = console.error;
               var originalWarn = console.warn;
 
-              function appendToConsole(text, color) {
+              window.logToDebugBox = function(text, color) {
                 var consoleDiv = document.getElementById("client-debug-console");
-                if (consoleDiv) {
-                  consoleDiv.style.display = "block";
+                var logsContainer = document.getElementById("client-debug-logs-container");
+                if (consoleDiv && logsContainer) {
+                  consoleDiv.style.display = "flex";
                   var p = document.createElement("p");
-                  p.style.color = color || "#ffffff";
-                  p.style.margin = "4px 0";
-                  p.style.fontFamily = "monospace";
+                  p.style.color = color || "#a7f3d0";
+                  p.style.margin = "0";
                   p.style.whiteSpace = "pre-wrap";
+                  p.style.wordBreak = "break-all";
                   p.innerText = "[" + new Date().toLocaleTimeString() + "] " + text;
-                  consoleDiv.appendChild(p);
-                  consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                  logsContainer.appendChild(p);
+                  logsContainer.scrollTop = logsContainer.scrollHeight;
                 }
+              };
+
+              function wrapLog(original, color) {
+                return function() {
+                  if (typeof original === "function") {
+                    original.apply(console, arguments);
+                  }
+                  var msg = Array.from(arguments).map(function(x) {
+                    if (x instanceof Error) {
+                      return x.stack || x.message || String(x);
+                    }
+                    if (typeof x === "object" && x !== null) {
+                      try {
+                        return JSON.stringify(x);
+                      } catch (e) {
+                        return "[Object]";
+                      }
+                    }
+                    return String(x);
+                  }).join(" ");
+                  window.logToDebugBox(msg, color);
+                };
               }
 
               try {
-                console.log = function() {
-                  originalLog.apply(console, arguments);
-                  var msg = Array.from(arguments).map(function(x) {
-                    if (typeof x === "object" && x !== null) {
-                      try {
-                        return JSON.stringify(x);
-                      } catch (e) {
-                        return "[Object]";
-                      }
-                    }
-                    return x;
-                  }).join(" ");
-                  appendToConsole(msg, "#a7f3d0"); // light green for logs
-                };
+                var currentLog = originalLog;
+                var currentWarn = originalWarn;
+                var currentError = originalError;
 
-                console.warn = function() {
-                  originalWarn.apply(console, arguments);
-                  var msg = Array.from(arguments).map(function(x) {
-                    if (typeof x === "object" && x !== null) {
-                      try {
-                        return JSON.stringify(x);
-                      } catch (e) {
-                        return "[Object]";
-                      }
-                    }
-                    return x;
-                  }).join(" ");
-                  appendToConsole(msg, "#fde047"); // yellow for warnings
-                };
+                var wrappedLog = wrapLog(currentLog, "#a7f3d0");
+                var wrappedWarn = wrapLog(currentWarn, "#fde047");
+                var wrappedError = wrapLog(currentError, "#f87171");
 
-                console.error = function() {
-                  originalError.apply(console, arguments);
-                  var msg = Array.from(arguments).map(function(x) {
-                    if (typeof x === "object" && x !== null) {
-                      try {
-                        return JSON.stringify(x);
-                      } catch (e) {
-                        return "[Object]";
-                      }
-                    }
-                    return x;
-                  }).join(" ");
-                  appendToConsole(msg, "#f87171"); // light red for errors
-                };
+                Object.defineProperty(console, "log", {
+                  get: function() { return wrappedLog; },
+                  set: function(newVal) {
+                    currentLog = newVal;
+                    wrappedLog = wrapLog(currentLog, "#a7f3d0");
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+
+                Object.defineProperty(console, "warn", {
+                  get: function() { return wrappedWarn; },
+                  set: function(newVal) {
+                    currentWarn = newVal;
+                    wrappedWarn = wrapLog(currentWarn, "#fde047");
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+
+                Object.defineProperty(console, "error", {
+                  get: function() { return wrappedError; },
+                  set: function(newVal) {
+                    currentError = newVal;
+                    wrappedError = wrapLog(currentError, "#f87171");
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
 
                 window.onerror = function(message, source, lineno, colno, error) {
-                  appendToConsole("Uncaught Error: " + message + " (at " + source + ":" + lineno + ")", "#f87171");
+                  window.logToDebugBox("Uncaught Error: " + message + " (at " + source + ":" + lineno + ")", "#f87171");
                   return false;
                 };
 
                 window.onunhandledrejection = function(event) {
-                  appendToConsole("Unhandled Promise: " + event.reason, "#fb923c");
+                  window.logToDebugBox("Unhandled Promise: " + event.reason, "#fb923c");
                 };
               } catch (e) {
                 originalLog && originalLog("Failed to override console", e);
@@ -185,21 +201,21 @@ export default function RootLayout({
             bottom: "20px",
             right: "20px",
             width: "360px",
-            maxHeight: "260px",
+            height: "260px",
             background: "rgba(15, 23, 42, 0.95)",
             border: "2px solid #ef4444",
             borderRadius: "12px",
             padding: "16px",
             color: "#ffffff",
             fontSize: "12px",
-            overflowY: "auto",
             zIndex: 999999,
-            display: "block",
+            display: "flex",
+            flexDirection: "column",
             boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
             fontFamily: "sans-serif"
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "6px", marginBottom: "8px", fontWeight: "bold" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "6px", marginBottom: "8px", fontWeight: "bold", flexShrink: 0 }}>
             <span style={{ color: "#ef4444" }}>Console Debug Log</span>
             <button 
               id="close-debug-btn" 
@@ -207,6 +223,22 @@ export default function RootLayout({
             >
               Close
             </button>
+          </div>
+          <div 
+            id="client-debug-logs-container" 
+            style={{ 
+              flexGrow: 1, 
+              overflowY: "auto", 
+              fontFamily: "monospace", 
+              fontSize: "11px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px"
+            }}
+          >
+            <p style={{ color: "#94a3b8", margin: 0, fontStyle: "italic" }}>
+              [System] Console hook active. Waiting for logs...
+            </p>
           </div>
         </div>
       </body>
