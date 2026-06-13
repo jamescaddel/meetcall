@@ -17,32 +17,57 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.onerror = function(message, source, lineno, colno, error) {
+              // Intercept all browser console logs, warnings, and errors
+              var originalLog = console.log;
+              var originalError = console.error;
+              var originalWarn = console.warn;
+
+              function appendToConsole(text, color) {
                 var consoleDiv = document.getElementById("client-debug-console");
                 if (consoleDiv) {
                   consoleDiv.style.display = "block";
                   var p = document.createElement("p");
-                  p.style.color = "#f87171";
+                  p.style.color = color || "#ffffff";
                   p.style.margin = "4px 0";
                   p.style.fontFamily = "monospace";
                   p.style.whiteSpace = "pre-wrap";
-                  p.innerText = "[" + new Date().toLocaleTimeString() + "] Error: " + message + " (at " + source + ":" + lineno + ")";
+                  p.innerText = "[" + new Date().toLocaleTimeString() + "] " + text;
                   consoleDiv.appendChild(p);
+                  consoleDiv.scrollTop = consoleDiv.scrollHeight;
                 }
+              }
+
+              console.log = function() {
+                originalLog.apply(console, arguments);
+                var msg = Array.from(arguments).map(function(x) {
+                  return typeof x === "object" ? JSON.stringify(x) : x;
+                }).join(" ");
+                appendToConsole(msg, "#a7f3d0"); // light green for logs
+              };
+
+              console.warn = function() {
+                originalWarn.apply(console, arguments);
+                var msg = Array.from(arguments).map(function(x) {
+                  return typeof x === "object" ? JSON.stringify(x) : x;
+                }).join(" ");
+                appendToConsole(msg, "#fde047"); // yellow for warnings
+              };
+
+              console.error = function() {
+                originalError.apply(console, arguments);
+                var msg = Array.from(arguments).map(function(x) {
+                  return typeof x === "object" ? JSON.stringify(x) : x;
+                }).join(" ");
+                appendToConsole(msg, "#f87171"); // light red for errors
+              };
+
+              window.onerror = function(message, source, lineno, colno, error) {
+                appendToConsole("Uncaught Error: " + message + " (at " + source + ":" + lineno + ")", "#f87171");
                 return false;
               };
+
               window.onunhandledrejection = function(event) {
-                var consoleDiv = document.getElementById("client-debug-console");
-                if (consoleDiv) {
-                  consoleDiv.style.display = "block";
-                  var p = document.createElement("p");
-                  p.style.color = "#fb923c";
-                  p.style.margin = "4px 0";
-                  p.style.fontFamily = "monospace";
-                  p.style.whiteSpace = "pre-wrap";
-                  p.innerText = "[" + new Date().toLocaleTimeString() + "] Promise Rejection: " + event.reason;
-                  consoleDiv.appendChild(p);
-                }
+                appendToConsole("Unhandled Promise: " + event.reason, "#fb923c");
               };
               
               // Document-level native event listeners to bypass React hydration blocks
@@ -129,7 +154,7 @@ export default function RootLayout({
             fontSize: "12px",
             overflowY: "auto",
             zIndex: 999999,
-            display: "none",
+            display: "block",
             boxShadow: "0 10px 30px rgba(0,0,0,0.6)",
             fontFamily: "sans-serif"
           }}
