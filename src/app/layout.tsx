@@ -17,7 +17,6 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Intercept all browser console logs, warnings, and errors
               var originalLog = console.log;
               var originalError = console.error;
               var originalWarn = console.warn;
@@ -37,59 +36,63 @@ export default function RootLayout({
                 }
               }
 
-              console.log = function() {
-                originalLog.apply(console, arguments);
-                var msg = Array.from(arguments).map(function(x) {
-                  if (typeof x === "object" && x !== null) {
-                    try {
-                      return JSON.stringify(x);
-                    } catch (e) {
-                      return "[Object]";
+              try {
+                console.log = function() {
+                  originalLog.apply(console, arguments);
+                  var msg = Array.from(arguments).map(function(x) {
+                    if (typeof x === "object" && x !== null) {
+                      try {
+                        return JSON.stringify(x);
+                      } catch (e) {
+                        return "[Object]";
+                      }
                     }
-                  }
-                  return x;
-                }).join(" ");
-                appendToConsole(msg, "#a7f3d0"); // light green for logs
-              };
+                    return x;
+                  }).join(" ");
+                  appendToConsole(msg, "#a7f3d0"); // light green for logs
+                };
 
-              console.warn = function() {
-                originalWarn.apply(console, arguments);
-                var msg = Array.from(arguments).map(function(x) {
-                  if (typeof x === "object" && x !== null) {
-                    try {
-                      return JSON.stringify(x);
-                    } catch (e) {
-                      return "[Object]";
+                console.warn = function() {
+                  originalWarn.apply(console, arguments);
+                  var msg = Array.from(arguments).map(function(x) {
+                    if (typeof x === "object" && x !== null) {
+                      try {
+                        return JSON.stringify(x);
+                      } catch (e) {
+                        return "[Object]";
+                      }
                     }
-                  }
-                  return x;
-                }).join(" ");
-                appendToConsole(msg, "#fde047"); // yellow for warnings
-              };
+                    return x;
+                  }).join(" ");
+                  appendToConsole(msg, "#fde047"); // yellow for warnings
+                };
 
-              console.error = function() {
-                originalError.apply(console, arguments);
-                var msg = Array.from(arguments).map(function(x) {
-                  if (typeof x === "object" && x !== null) {
-                    try {
-                      return JSON.stringify(x);
-                    } catch (e) {
-                      return "[Object]";
+                console.error = function() {
+                  originalError.apply(console, arguments);
+                  var msg = Array.from(arguments).map(function(x) {
+                    if (typeof x === "object" && x !== null) {
+                      try {
+                        return JSON.stringify(x);
+                      } catch (e) {
+                        return "[Object]";
+                      }
                     }
-                  }
-                  return x;
-                }).join(" ");
-                appendToConsole(msg, "#f87171"); // light red for errors
-              };
+                    return x;
+                  }).join(" ");
+                  appendToConsole(msg, "#f87171"); // light red for errors
+                };
 
-              window.onerror = function(message, source, lineno, colno, error) {
-                appendToConsole("Uncaught Error: " + message + " (at " + source + ":" + lineno + ")", "#f87171");
-                return false;
-              };
+                window.onerror = function(message, source, lineno, colno, error) {
+                  appendToConsole("Uncaught Error: " + message + " (at " + source + ":" + lineno + ")", "#f87171");
+                  return false;
+                };
 
-              window.onunhandledrejection = function(event) {
-                appendToConsole("Unhandled Promise: " + event.reason, "#fb923c");
-              };
+                window.onunhandledrejection = function(event) {
+                  appendToConsole("Unhandled Promise: " + event.reason, "#fb923c");
+                };
+              } catch (e) {
+                originalLog && originalLog("Failed to override console", e);
+              }
               
               // Document-level native event listeners to bypass React hydration blocks
               document.addEventListener("click", function(event) {
