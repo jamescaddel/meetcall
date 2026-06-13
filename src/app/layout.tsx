@@ -40,7 +40,14 @@ export default function RootLayout({
               console.log = function() {
                 originalLog.apply(console, arguments);
                 var msg = Array.from(arguments).map(function(x) {
-                  return typeof x === "object" ? JSON.stringify(x) : x;
+                  if (typeof x === "object" && x !== null) {
+                    try {
+                      return JSON.stringify(x);
+                    } catch (e) {
+                      return "[Object]";
+                    }
+                  }
+                  return x;
                 }).join(" ");
                 appendToConsole(msg, "#a7f3d0"); // light green for logs
               };
@@ -48,7 +55,14 @@ export default function RootLayout({
               console.warn = function() {
                 originalWarn.apply(console, arguments);
                 var msg = Array.from(arguments).map(function(x) {
-                  return typeof x === "object" ? JSON.stringify(x) : x;
+                  if (typeof x === "object" && x !== null) {
+                    try {
+                      return JSON.stringify(x);
+                    } catch (e) {
+                      return "[Object]";
+                    }
+                  }
+                  return x;
                 }).join(" ");
                 appendToConsole(msg, "#fde047"); // yellow for warnings
               };
@@ -56,7 +70,14 @@ export default function RootLayout({
               console.error = function() {
                 originalError.apply(console, arguments);
                 var msg = Array.from(arguments).map(function(x) {
-                  return typeof x === "object" ? JSON.stringify(x) : x;
+                  if (typeof x === "object" && x !== null) {
+                    try {
+                      return JSON.stringify(x);
+                    } catch (e) {
+                      return "[Object]";
+                    }
+                  }
+                  return x;
                 }).join(" ");
                 appendToConsole(msg, "#f87171"); // light red for errors
               };
